@@ -1,0 +1,128 @@
+\dt — list all the tables in the database.
+\dt+ — list tables plus additional information (notably, how big each table is on disk).
+\H — switch between printing tables in plain text vs. HTML.
+CREATE USER testuser WITH ENCRYPTED PASSWORD 'test123';
+ALTER USER testuser WITH SUPERUSER;
+
+Here's a fun one to run in psql while your forum web app is running:
+select * from posts \watch
+(Note that \watch replaces the semicolon.) This will display the contents of the posts table and refresh it every two seconds, so you can see changes to the table as you use the app.
+In order to do this, you'll need two terminal sessions into your VM — one running the forum app, and the other running psql. You can connect to the VM from any number of terminal windows at once — just open up another terminal, change to the vagrant directory, and type vagrant ssh again.
+select count(name) from authors;
+
+Database news
+
+ Schema |      Name       |   Type   |  Owner
+--------+-----------------+----------+---------
+ public | articles        | table    | vagrant
+ public | articles_id_seq | sequence | vagrant
+ public | authors         | table    | vagrant
+ public | authors_id_seq  | sequence | vagrant
+ public | log             | table    | vagrant
+ public | log_id_seq      | sequence | vagrant
+
+ 
+ 
+ 
+                                   Table "public.articles"
+ Column |           Type           |                       Modifiers            
+--------+--------------------------+-------------------------------------------------------
+ author | integer                  | not null
+ title  | text                     | not null
+ slug   | text                     | not null
+ lead   | text                     |
+ body   | text                     |
+ time   | timestamp with time zone | default now()
+ id     | integer                  | not null default nextval('articles_id_seq'::regclass)
+Indexes:
+    "articles_pkey" PRIMARY KEY, btree (id)
+    "articles_slug_key" UNIQUE CONSTRAINT, btree (slug)
+Foreign-key constraints:
+    "articles_author_fkey" FOREIGN KEY (author) REFERENCES authors(id)
+	
+	
+
+                         Table "public.authors"
+ Column |  Type   |                      Modifiers
+--------+---------+------------------------------------------------------
+ name   | text    | not null
+ bio    | text    |
+ id     | integer | not null default nextval('authors_id_seq'::regclass)
+Indexes:
+    "authors_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "articles" CONSTRAINT "articles_author_fkey" FOREIGN KEY (author) REFERENCES authors(id)
+	
+	
+
+                                  Table "public.log"
+ Column |           Type           |                    Modifiers               
+--------+--------------------------+--------------------------------------------------
+ path   | text                     |
+ ip     | inet                     |
+ method | text                     |
+ status | text                     |
+ time   | timestamp with time zone | default now()
+ id     | integer                  | not null default nextval('log_id_seq'::regclass)
+Indexes:
+    "log_pkey" PRIMARY KEY, btree (id)
+	
+
+This SQL query will join the two tables to find out what foods each animal can eat:
+select animals.name, animals.species, diet.food
+       from animals join diet
+       on animals.species = diet.species;
+	
+	##########################################
+	
+	
+	select articles.author, articles.title from articles;
+
+	select authors.id, authors.name from authors;
+	#count(*) as num
+	
+	# below gets the count by path of the logs table
+	select path, count(*) as num from log group by path order by num desc;
+	
+
+	# problem is the max returns the spam result the most
+	select max(path), count(*) from log where path != '/';
+	
+	
+	#Below returns results not includidng spam or ++++
+	select max(path), count(*) from log where path not like '%spam%' and path !='/+++ATH0'; 
+	
+ 	# below gets the name title and slug of all the articles
+	select authors.name,articles.title,articles.slug from articles,authors where authors.id = articles.author;
+ 
+ 	# try after agrigate with having
+	select path, count(*) as num from log group by path having path like '%candidate-is-jerk' order by num desc;
+	
+
+	#create art view
+	##CREATE VIEW art as select authors.name,articles.title,articles.slug from articles,authors where authors.id = articles.author;
+	select log.path, count(*) as total from log group by log.path order by total desc limit 3;
+
+
+db = psycopg2.connect("dbname=news")
+
+
+##############################################
+ #Below create the following views
+CREATE VIEW badrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "number_of_bad_requests" FROM log where status != '200 OK' GROUP BY 1 ORDER BY 2 desc;
+CREATE VIEW totalrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "total_number_of_requests" FROM log where status = '200 OK' GROUP BY 1 ORDER BY 2 desc;
+CREATE VIEW percents as select totalrequests.day, totalrequests.total_number_of_requests,badrequests.number_of_bad_requests,(badrequests.number_of_bad_requests / totalrequests.total_number_of_requests)  as percent from totalrequests join badrequests on totalrequests.day = badrequests.day;
+CREATE VIEW populararticles as select articles.title, count(*) as total from articles inner join log on log.path ILIKE '%' || articles.slug || '%' group by articles.title order by total desc limit 3;
+CREATE VIEW rankedauthors as select authors.name, count(*) as views from authors,articles inner join log on log.path ILIKE '%' || articles.slug || '%' where authors.id = articles.author group by authors.name order by views desc;	
+
+	
+
+#gets most popular articles
+ select * from populararticles;
+ 
+ # gets the authors with most views
+select authors.name, count(*) as views from authors,articles inner join log on log.path ILIKE '%' || articles.slug || '%' where authors.id = articles.author group by authors.name order by views desc;	
+
+
+# sql querry for answer.
+select day,percent from percents where percent > .02;
