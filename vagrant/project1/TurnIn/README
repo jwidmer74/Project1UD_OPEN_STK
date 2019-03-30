@@ -1,6 +1,6 @@
 
 Please create the following views below before running the jwidmerproject1.py in the path below
-....\fsnd-virtual-machine\FSND-Virtual-Machine\vagrant\project1\jwidmerproject1.py
+..../fsnd-virtual-machine/FSND-Virtual-Machine/vagrant/project1/jwidmerproject1.py
 
 CREATE VIEW badrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "number_of_bad_requests" FROM log where status != '200 OK' GROUP BY 1 ORDER BY 2 desc;
 CREATE VIEW totalrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "total_number_of_requests" FROM log where status = '200 OK' GROUP BY 1 ORDER BY 2 desc;
