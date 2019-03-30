@@ -1,6 +1,10 @@
-Please create the following views before running the jwidmerproject1.py
+
+Please create the following views below before running the jwidmerproject1.py in the path below
+....\fsnd-virtual-machine\FSND-Virtual-Machine\vagrant\project1\jwidmerproject1.py
+
 CREATE VIEW badrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "number_of_bad_requests" FROM log where status != '200 OK' GROUP BY 1 ORDER BY 2 desc;
 CREATE VIEW totalrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "total_number_of_requests" FROM log where status = '200 OK' GROUP BY 1 ORDER BY 2 desc;
 CREATE VIEW percents as select totalrequests.day, totalrequests.total_number_of_requests,badrequests.number_of_bad_requests,(badrequests.number_of_bad_requests / totalrequests.total_number_of_requests)  as percent from totalrequests join badrequests on totalrequests.day = badrequests.day;
-CREATE VIEW populararticles as select articles.title, count(*) as total from articles inner join log on log.path ILIKE '%' || articles.slug || '%' group by articles.title order by total desc limit 3;
-CREATE VIEW rankedauthors as select authors.name, count(*) as views from authors,articles inner join log on log.path ILIKE '%' || articles.slug || '%' where authors.id = articles.author group by authors.name order by views desc;	
+CREATE VIEW populararticles as select articles.title, count(*) as total from articles inner join log on log.path ILIKE '%' || articles.slug || '%' where log.status = '200 OK' group by articles.title order by total desc limit 3;
+CREATE VIEW rankedauthors as select authors.name, count(*) as views from authors,articles inner join log on log.path ILIKE '%' || articles.slug || '%' where authors.id = articles.author AND log.status = '200 OK' group by authors.name order by views desc;	
+
