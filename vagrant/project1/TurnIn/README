@@ -1,9 +1,23 @@
+#Please create the following views below before running the jwidmerproject1.py in the path below
+#....\fsnd-virtual-machine\FSND-Virtual-Machine\vagrant\project1\jwidmerproject1.py
 
-Please create the following views below before running the jwidmerproject1.py in the path below
-..../fsnd-virtual-machine/FSND-Virtual-Machine/vagrant/project1/jwidmerproject1.py
+#For the first question I created a view called populararticles. 
+#populararticles takes the columns article title and the total article count, and slug filtering. Next filters for good articles descending and taking the first 3 results.
 
+#For the second question I created a view called rankedauthors. I took columns of the authors name count, and slug filtering where the authors id and articles authror returned a 200 status then grouped by the aurthors name in decending order.
+
+#For the last question I first had to create two views named badrequests and totalrequests.  From the results of the first two views I created the final view called percents.
+#The badrequests view had the day column and time along with the number of bad requests from the log table which was filterd by the status not being 200.
+#The totalrequests view had the day column and time and total number of requests which was not filtered.
+#when I call question 3 in python I select the view and filter on greater than 2%.
+
+#The jwidmerproject1 file for each answer opens a connection to the news database. creates a cusor object and runs the specific select statement for the question. Then it calls the print statement
+with formatting being handeled inside python. After printing to the screen each question the database connection is closed.
+
+ 
 CREATE VIEW badrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "number_of_bad_requests" FROM log where status != '200 OK' GROUP BY 1 ORDER BY 2 desc;
-CREATE VIEW totalrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "total_number_of_requests" FROM log where status = '200 OK' GROUP BY 1 ORDER BY 2 desc;
+CREATE VIEW totalrequests as SELECT date_trunc('day', log.time) AS "day", Cast (count(*) as float) AS "total_number_of_requests" FROM log  GROUP BY 1 ORDER BY 2 desc;
+
 CREATE VIEW percents as select totalrequests.day, totalrequests.total_number_of_requests,badrequests.number_of_bad_requests,(badrequests.number_of_bad_requests / totalrequests.total_number_of_requests)  as percent from totalrequests join badrequests on totalrequests.day = badrequests.day;
 CREATE VIEW populararticles as select articles.title, count(*) as total from articles inner join log on log.path ILIKE '%' || articles.slug || '%' where log.status = '200 OK' group by articles.title order by total desc limit 3;
 CREATE VIEW rankedauthors as select authors.name, count(*) as views from authors,articles inner join log on log.path ILIKE '%' || articles.slug || '%' where authors.id = articles.author AND log.status = '200 OK' group by authors.name order by views desc;	
